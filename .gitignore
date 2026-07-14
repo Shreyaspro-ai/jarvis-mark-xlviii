@@ -1,0 +1,22 @@
+# Secrets — never commit
+config/api_keys.json
+config/certs/
+*.key
+*.pem
+*.crt
+
+# Personal / runtime data
+memory/long_term.json
+*.log
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Backups / editor junk
+*.bak
+*.bak-*
+.DS_Store
