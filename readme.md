@@ -1,3 +1,18 @@
+> ## 🙏 Attribution & Credits
+> This project is a **modified fork** of **MARK XLVIII by FatihMakes**.
+> - **Original repository:** https://github.com/FatihMakes/Mark-XLVIII
+> - **Creator:** FatihMakes — [YouTube](https://www.youtube.com/@FatihMakes) · [Instagram](https://www.instagram.com/fatihmakes)
+> - **License:** [Creative Commons Attribution–NonCommercial 4.0 (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/)
+>
+> All original credit belongs to FatihMakes. This fork is a **non-commercial** personal project.
+> **Changes made in this fork:** added an autonomous "Agent Mode" (`actions/agent_mode.py`),
+> a file-path/open fix in `file_controller`, reasoning/routing prompt tweaks, and TLS trust-store handling.
+>
+> As required by CC BY-NC 4.0, this work may **not** be used commercially, and this attribution
+> and license must be preserved in any further redistribution.
+
+---
+
 # ⚙️ MARK XLVIII (48)
 ### The Ultimate Cross-Platform Personal AI Assistant — By FatihMakes
 
