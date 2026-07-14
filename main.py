@@ -49,6 +49,7 @@ from actions.code_helper       import code_helper
 from actions.dev_agent         import dev_agent
 from actions.agent_mode        import agent_mode
 from actions.spells            import cast_spell
+from actions.power_control      import power_control
 from actions.web_search        import web_search as web_search_action
 from actions.computer_control  import computer_control
 from actions.game_updater      import game_updater
@@ -349,6 +350,17 @@ TOOL_DECLARATIONS = [
                 "working_dir": {"type": "STRING", "description": "Absolute folder path to work in (optional; defaults to the user's home folder)."},
             },
             "required": ["goal"]
+        }
+    },
+    {
+        "name": "power_control",
+        "description": "Screensaver, keep-awake, and lock control. Use for: turning the screensaver off ('disable_screensaver') or back on ('enable_screensaver'), keeping the display awake / preventing sleep ('keep_awake'), releasing that hold ('allow_sleep'), and locking the PC ('lock_screen').",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {"type": "STRING", "description": "disable_screensaver | enable_screensaver | keep_awake | allow_sleep | lock_screen"},
+            },
+            "required": ["action"]
         }
     },
     {
@@ -783,6 +795,10 @@ class JarvisLive:
 
             elif name == "cast_spell":
                 r = await loop.run_in_executor(None, lambda: cast_spell(parameters=args, player=self.ui, speak=self.speak))
+                result = r or "Done."
+
+            elif name == "power_control":
+                r = await loop.run_in_executor(None, lambda: power_control(parameters=args, player=self.ui, speak=self.speak))
                 result = r or "Done."
 
             elif name == "web_search":

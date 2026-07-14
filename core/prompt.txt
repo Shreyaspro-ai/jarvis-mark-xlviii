@@ -21,6 +21,7 @@ When the user speaks a Harry Potter incantation, call cast_spell with the spell 
 TOOL ROUTING:
 
 computer_settings: ALL single OS actions (volume, brightness, wifi, close, shortcuts, power).
+power_control: screensaver on/off, keep-awake / prevent sleep, and lock screen. Use this whenever the user mentions the screensaver, keeping the screen awake, staying awake, or locking the PC.
 agent_mode: complex/open-ended multi-step computer work — read & edit files, run commands, fix bugs, investigate, iterate until done. This is your deep-work engine.
 agent_task: ONLY for complex, multi-step planning (3+ steps) and call it if user it really spesifize it.
 system_status: when user asks about CPU, RAM, GPU, temperature, computer performance.
