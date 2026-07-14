@@ -48,6 +48,7 @@ from actions.file_controller   import file_controller
 from actions.code_helper       import code_helper
 from actions.dev_agent         import dev_agent
 from actions.agent_mode        import agent_mode
+from actions.spells            import cast_spell
 from actions.web_search        import web_search as web_search_action
 from actions.computer_control  import computer_control
 from actions.game_updater      import game_updater
@@ -348,6 +349,18 @@ TOOL_DECLARATIONS = [
                 "working_dir": {"type": "STRING", "description": "Absolute folder path to work in (optional; defaults to the user's home folder)."},
             },
             "required": ["goal"]
+        }
+    },
+    {
+        "name": "cast_spell",
+        "description": "Casts a Harry Potter voice spell. Use whenever the user speaks a spell: 'accio <app>' opens an app; 'avada kedavra <app>' kills/closes that app's process; 'lumos' brightness up; 'nox' brightness down; 'silencio' mute; 'sonorus' volume up; 'quietus' volume down.",
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "spell":  {"type": "STRING", "description": "The incantation: accio | avada kedavra | lumos | nox | silencio | sonorus | quietus"},
+                "target": {"type": "STRING", "description": "The app name for accio/avada kedavra (e.g. 'chrome'). Empty for spells that need no target."},
+            },
+            "required": ["spell"]
         }
     },
     {
@@ -766,6 +779,10 @@ class JarvisLive:
 
             elif name == "agent_mode":
                 r = await loop.run_in_executor(None, lambda: agent_mode(parameters=args, player=self.ui, speak=self.speak))
+                result = r or "Done."
+
+            elif name == "cast_spell":
+                r = await loop.run_in_executor(None, lambda: cast_spell(parameters=args, player=self.ui, speak=self.speak))
                 result = r or "Done."
 
             elif name == "web_search":
