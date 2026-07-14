@@ -1020,9 +1020,8 @@ class JarvisLive:
 
     async def _send_startup_briefing(self) -> None:
         """
-        Two-phase briefing for instant perceived response:
-          Phase 1 — immediate greeting (no tools, no fetch) → Jarvis speaks in <2s
-          Phase 2 — news fetched in background, injected after greeting finishes
+        Startup greeting only — a short spoken welcome, no tools/fetch.
+        News, weather, etc. are delivered only when the user explicitly asks.
         """
         await asyncio.sleep(0.3)
         if not self.session:
@@ -1042,28 +1041,20 @@ class JarvisLive:
         from datetime import datetime
         time_str = datetime.now().strftime("%H:%M")
 
-        # ── Phase 1: instant greeting — one simple sentence ──────────────────
+        # ── Greeting only — one short sentence, no tools, no news ────────────
         lang_clause = f" Respond in {lang}." if lang else ""
         name_clause = f" Address the user as {name}." if name else ""
         p1 = (
-            f"Greet the user, mention it is {time_str}, and say you are fetching today's news headlines now. "
-            f"One short sentence only. Do not call any tools.{lang_clause}{name_clause}"
+            f"Greet the user warmly and mention it is {time_str}. "
+            f"One short sentence only. Do not mention news or offer a briefing. "
+            f"Do not call any tools.{lang_clause}{name_clause}"
         )
 
         await self.session.send_client_content(
             turns={"parts": [{"text": p1}]},
             turn_complete=True,
         )
-        self.ui.write_log("SYS: Briefing phase 1 (greeting) sent.")
-
-        # ── Phase 2: fetch news in background, deliver after greeting plays ───
-        async def _guarded_news():
-            try:
-                await self._briefing_news_phase(lang)
-            except Exception as e:
-                print(f"[Briefing] Phase 2 error: {e}")
-                self.ui.write_log(f"SYS: Briefing news phase failed: {e}")
-        asyncio.create_task(_guarded_news())
+        self.ui.write_log("SYS: Startup greeting sent.")
 
     async def _briefing_news_phase(self, lang: str) -> None:
         """
