@@ -50,6 +50,7 @@ from actions.dev_agent         import dev_agent
 from actions.agent_mode        import agent_mode
 from actions.spells            import cast_spell
 from actions.power_control      import power_control
+from actions.delta_market       import delta_market
 from actions.web_search        import web_search as web_search_action
 from actions.computer_control  import computer_control
 from actions.game_updater      import game_updater
@@ -185,17 +186,38 @@ TOOL_DECLARATIONS = [
     {
         "name": "youtube_video",
         "description": (
-            "Controls YouTube. Use for: playing videos, summarizing a video's content, "
-            "getting video info, or showing trending videos."
+            "Controls and analyzes YouTube. Use for: playing videos, ANALYZING a video's "
+            "content (deep breakdown from its transcript), summarizing, getting video info, "
+            "or trending. For 'analyze what this video says', 'break down this video', or "
+            "'watch and analyze <topic>', use action='analyze' with a url OR a query."
         ),
         "parameters": {
             "type": "OBJECT",
             "properties": {
-                "action": {"type": "STRING", "description": "play | summarize | get_info | trending (default: play)"},
-                "query":  {"type": "STRING", "description": "Search query for play action"},
-                "save":   {"type": "BOOLEAN", "description": "Save summary to Notepad (summarize only)"},
+                "action": {"type": "STRING", "description": "play | analyze | summarize | get_info | trending (default: play)"},
+                "query":  {"type": "STRING", "description": "Search query (play, or analyze without a url)"},
+                "url":    {"type": "STRING", "description": "Video URL for analyze / get_info"},
+                "save":   {"type": "BOOLEAN", "description": "Save the analysis/summary to Desktop"},
                 "region": {"type": "STRING", "description": "Country code for trending e.g. TR, US"},
-                "url":    {"type": "STRING", "description": "Video URL for get_info action"},
+            },
+            "required": []
+        }
+    },
+    {
+        "name": "delta_market",
+        "description": (
+            "READ-ONLY crypto market data and technical analysis from Delta Exchange "
+            "(public data, no account, analysis only — never trades). Use whenever the "
+            "user asks to analyze a coin/crypto, wants technical analysis, a chart read, "
+            "trend/bias, RSI/MACD/EMA, or the current price of BTC, ETH, SOL, etc. "
+            "action='analyze' gives a full technical read; action='price' gives a quick quote."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action":    {"type": "STRING", "description": "analyze (default) | price"},
+                "symbol":    {"type": "STRING", "description": "Symbol or coin, e.g. BTCUSD, ETHUSD, SOL, bitcoin (default BTCUSD)"},
+                "timeframe": {"type": "STRING", "description": "1m | 5m | 15m | 1h | 4h | 1d | 1w (default 1h)"},
             },
             "required": []
         }
@@ -799,6 +821,10 @@ class JarvisLive:
 
             elif name == "power_control":
                 r = await loop.run_in_executor(None, lambda: power_control(parameters=args, player=self.ui, speak=self.speak))
+                result = r or "Done."
+
+            elif name == "delta_market":
+                r = await loop.run_in_executor(None, lambda: delta_market(parameters=args, player=self.ui, speak=self.speak))
                 result = r or "Done."
 
             elif name == "web_search":

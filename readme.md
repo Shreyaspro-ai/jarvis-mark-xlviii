@@ -47,7 +47,9 @@ author is below — please keep it intact.
 | Addition | What it does |
 |---|---|
 | 🤖 **Agent Mode** | An autonomous worker that reads/edits files, runs commands, checks results, and iterates until a task is genuinely finished — not a one-shot reply. |
-| 🪄 **Spellbook** | Cast Harry Potter incantations by voice to open apps, close them, and control light and sound. |
+| 🪄 **Spellbook** | Cast **22 Harry Potter incantations** by voice to open/close apps, control light and sound, lock the screen, screenshot, clear the clipboard, and more. |
+| 📊 **Market analysis** | Read-only technical analysis of crypto from Delta Exchange's public data — price, trend, RSI, MACD, EMAs, ATR, and a bias call. Analysis only; it never trades. |
+| 🎥 **Video analysis** | Point JARVIS at a YouTube URL or topic and it pulls the transcript and gives a real breakdown — overview, key points, claims, and a critical read. |
 | 🔕 **Quiet startup** | JARVIS greets you and then waits. News and briefings arrive only on request, never automatically at launch. |
 
 Everything else from the base assistant — voice chat, vision, OS control, file
@@ -102,11 +104,23 @@ Speak the incantation and JARVIS obeys.
 |---|---|
 | `Accio <app>` | Summon (open) an app — e.g. *Accio Chrome*, *Accio Spotify* |
 | `Avada Kedavra <app>` | Strike down (close) that app's process — e.g. *Avada Kedavra Notepad* |
-| `Lumos` | Brightness up |
-| `Nox` | Brightness down |
+| `Expecto Patronum` | Summon a guardian — open Task Manager |
+| `Expelliarmus` | Disarm — close the active window |
+| `Wingardium Leviosa` | Levitate the windows away — show the desktop |
+| `Lumos` / `Incendio` | Brightness up |
+| `Nox` / `Glacius` | Brightness down |
 | `Silencio` | Mute the sound |
-| `Sonorus` | Volume up |
+| `Sonorus` / `Crescendo` | Volume up |
 | `Quietus` | Volume down |
+| `Colloportus` / `Stupefy` | Lock the screen |
+| `Protego` | Raise a shield — enable the screensaver |
+| `Alohomora` | Unlock the display from sleep — keep it awake |
+| `Finite Incantatem` | End active effects — allow sleep again |
+| `Tempus` | Conjure the current time aloud |
+| `Obliviate` | Memory charm — wipe the clipboard |
+| `Geminio` | Duplication charm — copy the selection |
+| `Revelio` | Reveal — take a screenshot to the Desktop |
+| `Reparo` | Mend the Windows desktop / taskbar (restart Explorer) |
 
 `Accio` reuses the assistant's built-in app launcher, so all its known apps (browsers,
 editors, chat apps, media players, Office, and more) work by their friendly names.
@@ -182,7 +196,9 @@ Once it's running, just speak naturally. A few things to try:
 
 - **Chat:** "What's the time?" · "Remind me to stretch in 20 minutes."
 - **Control:** "Turn the volume down." · "Open VS Code."
-- **Spells:** "Accio Chrome." · "Lumos." · "Avada Kedavra Notepad."
+- **Spells:** "Accio Chrome." · "Lumos." · "Revelio." · "Avada Kedavra Notepad."
+- **Market:** "Analyze Bitcoin on the 1-hour." · "What's the price of ETH?" · "Give me a technical read on SOL daily."
+- **Video:** "Analyze this YouTube video: <url>." · "Watch and break down the latest video on <topic>."
 - **Agent work:** "Organize my Downloads folder and tell me what you moved."
 - **On demand only:** "Give me today's top news." (it won't do this on its own anymore)
 
@@ -196,7 +212,9 @@ ui.py                   PyQt heads-up display
 core/                   prompt.txt (assistant persona/rules), STT/TTS, installer, llm client
 actions/                One module per capability:
   agent_mode.py           autonomous multi-step agent (this fork)
-  spells.py               Harry Potter spellbook (this fork)
+  spells.py               Harry Potter spellbook — 22 incantations (this fork)
+  delta_market.py         read-only crypto TA from Delta Exchange (this fork)
+  youtube_video.py        play + transcript-based video analysis (analyze added this fork)
   file_controller.py      file & folder operations (path + open fixes in this fork)
   open_app.py             app launcher with a large alias map
   computer_settings.py    volume, brightness, windows, power

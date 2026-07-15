@@ -399,9 +399,87 @@ def _handle_trending(parameters: dict, player, speak) -> str:
 
     return result
 
+def _analyze_with_gemini(transcript: str, title: str) -> str:
+    from google import genai as _genai
+    from google.genai import types
+
+    _client = _genai.Client(api_key=_get_api_key())
+    max_chars = 100000
+    truncated = transcript[:max_chars] + ("..." if len(transcript) > max_chars else "")
+    response = _client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=(f"Analyze this YouTube video.\nTitle: {title}\n\n"
+                  f"Transcript:\n{truncated}"),
+        config=types.GenerateContentConfig(
+            system_instruction=(
+                "You are JARVIS. Give a genuine analysis of a YouTube video from its "
+                "transcript — not just a summary. Cover: (1) a one-line overview, "
+                "(2) the main argument or purpose, (3) the key points or steps, "
+                "(4) any notable claims, data, or takeaways, and (5) your brief critical "
+                "read — is it credible, useful, or thin? Be direct and concise. "
+                "Address the user as 'sir'. Match the transcript's language."
+            )
+        )
+    )
+    return response.text.strip()
+
+
+def _handle_analyze(parameters: dict, player, speak) -> str:
+    """Analyze a video by URL or by search query — no blocking dialogs (voice-friendly)."""
+    if not _TRANSCRIPT_OK:
+        return "youtube-transcript-api is not installed. Run: pip install youtube-transcript-api"
+
+    url = (parameters.get("url") or "").strip()
+    query = (parameters.get("query") or "").strip()
+
+    if not url and query:
+        if player:
+            player.write_log(f"[YouTube] Finding video for analysis: {query}")
+        url = _scrape_first_video_url(query)
+        if not url:
+            return f"I couldn't find a video for '{query}', sir."
+    if not url:
+        return "Give me a YouTube URL or a search query to analyze, sir."
+    if not _is_valid_youtube_url(url):
+        return "That doesn't look like a valid YouTube URL, sir."
+
+    video_id = _extract_video_id(url)
+    if not video_id:
+        return "Could not extract the video ID, sir."
+
+    info = _scrape_video_info(video_id)
+    title = info.get("title", url)
+
+    if player:
+        player.write_log(f"[YouTube] Analyzing: {url}")
+    if speak:
+        speak("Pulling the transcript and analyzing the video now, sir.")
+
+    transcript = _get_transcript(video_id)
+    if not transcript:
+        return ("I couldn't retrieve a transcript for that video, sir — "
+                "it may have captions disabled.")
+
+    try:
+        analysis = _analyze_with_gemini(transcript, title)
+    except Exception as e:
+        return f"Analysis failed, sir: {e}"
+
+    header = f"Analysis — {title}\n{'─' * 40}\n"
+    result = header + analysis
+
+    if parameters.get("save", False):
+        _save_summary(result, url)
+
+    if speak:
+        speak(analysis)
+    return result
+
+
 _ACTION_MAP = {
     "play":      _handle_play,
     "summarize": _handle_summarize,
+    "analyze":   _handle_analyze,
     "get_info":  _handle_get_info,
     "trending":  _handle_trending,
 }
