@@ -51,6 +51,8 @@ from actions.agent_mode        import agent_mode
 from actions.spells            import cast_spell
 from actions.power_control      import power_control
 from actions.delta_market       import delta_market
+from actions.skills             import skills as skills_action
+from actions.recall             import recall as recall_action, journal as _journal
 from actions.web_search        import web_search as web_search_action
 from actions.computer_control  import computer_control
 from actions.game_updater      import game_updater
@@ -218,6 +220,46 @@ TOOL_DECLARATIONS = [
                 "action":    {"type": "STRING", "description": "analyze (default) | price"},
                 "symbol":    {"type": "STRING", "description": "Symbol or coin, e.g. BTCUSD, ETHUSD, SOL, bitcoin (default BTCUSD)"},
                 "timeframe": {"type": "STRING", "description": "1m | 5m | 15m | 1h | 4h | 1d | 1w (default 1h)"},
+            },
+            "required": []
+        }
+    },
+    {
+        "name": "skills",
+        "description": (
+            "JARVIS's self-improving skill library — its learning loop. BEFORE doing a "
+            "complex or multi-step task, call with action='find' (query=the task) to reuse "
+            "what already worked. AFTER succeeding at a non-trivial task, call action='save' "
+            "(name, description, content=clear step-by-step instructions) so you improve over "
+            "time. Saving an existing name refines that skill. Also: get, list, delete."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action":      {"type": "STRING", "description": "find (default) | save | get | list | delete"},
+                "name":        {"type": "STRING", "description": "Skill name (save/get/delete)"},
+                "query":       {"type": "STRING", "description": "What you're trying to do (find)"},
+                "description": {"type": "STRING", "description": "One-line summary of the skill (save)"},
+                "content":     {"type": "STRING", "description": "The reusable step-by-step instructions (save)"},
+                "tags":        {"type": "STRING", "description": "Comma-separated keywords (save)"},
+            },
+            "required": []
+        }
+    },
+    {
+        "name": "recall",
+        "description": (
+            "Searches JARVIS's memory of PAST CONVERSATIONS (across sessions). Use whenever "
+            "the user refers to something earlier — 'what did we decide', 'like last time', "
+            "'that thing I mentioned', 'remind me what you said about X' — to look it up "
+            "before answering. action='search' with a query, or 'recent' for the latest exchanges."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {"type": "STRING", "description": "search (default) | recent"},
+                "query":  {"type": "STRING", "description": "What to look for in past conversations"},
+                "limit":  {"type": "NUMBER", "description": "Max results (default 8)"},
             },
             "required": []
         }
@@ -827,6 +869,14 @@ class JarvisLive:
                 r = await loop.run_in_executor(None, lambda: delta_market(parameters=args, player=self.ui, speak=self.speak))
                 result = r or "Done."
 
+            elif name == "skills":
+                r = await loop.run_in_executor(None, lambda: skills_action(parameters=args, player=self.ui, speak=self.speak))
+                result = r or "Done."
+
+            elif name == "recall":
+                r = await loop.run_in_executor(None, lambda: recall_action(parameters=args, player=self.ui, speak=self.speak))
+                result = r or "Done."
+
             elif name == "web_search":
                 r = await loop.run_in_executor(None, lambda: web_search_action(parameters=args, player=self.ui))
                 result = r or "Done."
@@ -971,6 +1021,7 @@ class JarvisLive:
                             full_in = " ".join(in_buf).strip()
                             if full_in:
                                 self.ui.write_log(f"You: {full_in}")
+                                _journal("user", full_in)
                                 if self._dashboard:
                                     asyncio.create_task(self._dashboard.broadcast({
                                         "type": "log", "speaker": "user",
@@ -982,6 +1033,7 @@ class JarvisLive:
                             full_out = " ".join(out_buf).strip()
                             if full_out:
                                 self.ui.write_log(f"Jarvis: {full_out}")
+                                _journal("jarvis", full_out)
                                 if self._dashboard:
                                     asyncio.create_task(self._dashboard.broadcast({
                                         "type": "log", "speaker": "jarvis",

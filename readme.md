@@ -23,6 +23,12 @@ author is below — please keep it intact.
 > All original credit belongs to FatihMakes. This fork is a **non-commercial** personal project.
 > As required by CC BY-NC 4.0, this work may **not** be used commercially, and this attribution
 > and license must be preserved in any redistribution.
+>
+> **Also acknowledged:** the learning-loop capabilities (self-improving skills + cross-session
+> recall) were reimplemented natively for JARVIS, inspired by the designs of
+> [Hermes Agent](https://github.com/NousResearch/hermes-agent) (Nous Research, MIT) and
+> [OpenClaw](https://github.com/openclaw/openclaw) (MIT). No code was copied verbatim; both are
+> MIT-licensed and their ideas are credited here with thanks.
 
 ---
 
@@ -48,6 +54,7 @@ author is below — please keep it intact.
 |---|---|
 | 🤖 **Agent Mode** | An autonomous worker that reads/edits files, runs commands, checks results, and iterates until a task is genuinely finished — not a one-shot reply. |
 | 🪄 **Spellbook** | Cast **22 Harry Potter incantations** by voice to open/close apps, control light and sound, lock the screen, screenshot, clear the clipboard, and more. |
+| 🧠 **Learning loop** | A self-improving **skill library** — JARVIS records a reusable, step-by-step skill after a hard task and reuses/refines it next time — plus **cross-session recall** that full-text-searches its own past conversations. |
 | 📊 **Market analysis** | Read-only technical analysis of crypto from Delta Exchange's public data — price, trend, RSI, MACD, EMAs, ATR, and a bias call. Analysis only; it never trades. |
 | 🎥 **Video analysis** | Point JARVIS at a YouTube URL or topic and it pulls the transcript and gives a real breakdown — overview, key points, claims, and a critical read. |
 | 🔕 **Quiet startup** | JARVIS greets you and then waits. News and briefings arrive only on request, never automatically at launch. |
@@ -214,6 +221,8 @@ actions/                One module per capability:
   agent_mode.py           autonomous multi-step agent (this fork)
   spells.py               Harry Potter spellbook — 22 incantations (this fork)
   delta_market.py         read-only crypto TA from Delta Exchange (this fork)
+  skills.py               self-improving skill library — learning loop (this fork)
+  recall.py               cross-session memory search over past chats (this fork)
   youtube_video.py        play + transcript-based video analysis (analyze added this fork)
   file_controller.py      file & folder operations (path + open fixes in this fork)
   open_app.py             app launcher with a large alias map
