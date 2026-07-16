@@ -2,6 +2,42 @@
 
 This is a customized build of MARK XLVIII (JARVIS) with an added **Agent Mode**.
 
+---
+
+## Linux — quick start (recommended)
+
+One command, once:
+
+```bash
+git clone https://github.com/Shreyaspro-ai/jarvis-mark-xlviii.git
+cd jarvis-mark-xlviii
+chmod +x install.sh && ./install.sh
+```
+
+`install.sh` installs the system libraries (PortAudio, Qt/X11, scrot), creates the
+virtualenv, installs every Python dependency, and drops a blank `config/api_keys.json`
+for you. Paste your own free Gemini key into that file
+(https://aistudio.google.com/apikey) — it is git-ignored and never uploaded.
+
+Then run it:
+
+```bash
+./start-jarvis.sh
+```
+
+**You never need to install again.** `start-jarvis.sh` pulls the latest version from
+GitHub on every launch and installs any new dependencies automatically. To launch
+without checking for updates, use `./start-jarvis.sh --no-update`. To update by hand
+without starting, run `./update.sh`.
+
+The updater is deliberately cautious: if you've edited a tracked file yourself, it
+stops and tells you rather than overwriting your work. Your API key, certs, and saved
+memory are git-ignored, so updates never touch them.
+
+---
+
+## Manual setup (Windows, or if you'd rather do it by hand)
+
 ## 1. Provide your Gemini API key
 Copy the example config and paste in your own key:
 
