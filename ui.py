@@ -1670,9 +1670,16 @@ class MainWindow(QMainWindow):
         Never opens a terminal, console, or PowerShell window on any platform.
         """
         import stat as _stat
-        script  = Path(__file__).resolve().parent / "main.py"
+        root    = Path(__file__).resolve().parent
+        script  = root / "main.py"
         python  = Path(sys.executable)
         desktop = Path.home() / "Desktop"
+
+        # Point shortcuts at the LAUNCHER, not main.py. The launchers pull the
+        # latest from GitHub before starting, so a desktop icon stays current;
+        # launching main.py directly means updates only land on the NEXT run.
+        win_launcher = root / "Start-Jarvis.bat"
+        nix_launcher = root / "start-jarvis.sh"
 
         # Arc-reactor icon (.ico — also exported as .png for Linux/macOS)
         ico_path = Path(__file__).resolve().parent / "config" / "jarvis.ico"
@@ -1684,12 +1691,16 @@ class MainWindow(QMainWindow):
 
             # ── Windows ───────────────────────────────────────────────────────
             if _os == "Windows":
-                pythonw  = python.parent / "pythonw.exe"
-                target   = str(pythonw if pythonw.exists() else python)
+                pythonw = python.parent / "pythonw.exe"
+                if win_launcher.exists():
+                    target, args = str(win_launcher), ""      # updates, then starts
+                else:
+                    target = str(pythonw if pythonw.exists() else python)
+                    args   = str(script)
                 lnk      = str(desktop / "J.A.R.V.I.S.lnk")
                 icon_loc = str(ico_path) if ico_path.exists() else f"{target},0"
-                self._create_lnk_windows(lnk, target, str(script),
-                                         str(script.parent), icon_loc)
+                self._create_lnk_windows(lnk, target, args,
+                                         str(root), icon_loc)
 
             # ── macOS — proper .app bundle (no Terminal window) ───────────────
             elif _os == "Darwin":
@@ -1702,10 +1713,15 @@ class MainWindow(QMainWindow):
                 # Launcher executable (bash — runs as background process,
                 # macOS does NOT open Terminal for executables inside .app bundles)
                 launcher = mac_dir / "JARVIS"
+                if nix_launcher.exists():
+                    # start-jarvis.sh pulls the latest, then execs main.py
+                    inner = f'exec "{nix_launcher}"\n'
+                else:
+                    inner = f'exec "{python}" "{script}"\n'
                 launcher.write_text(
                     "#!/usr/bin/env bash\n"
-                    f'cd "{script.parent}"\n'
-                    f'exec "{python}" "{script}"\n'
+                    f'cd "{root}"\n'
+                    + inner
                 )
                 launcher.chmod(launcher.stat().st_mode
                                | _stat.S_IEXEC | _stat.S_IXGRP | _stat.S_IXOTH)
@@ -1757,12 +1773,16 @@ class MainWindow(QMainWindow):
                         png_path = ico_path  # fallback to .ico
 
                 icon_line = f"Icon={png_path}\n" if png_path.exists() else ""
+                # start-jarvis.sh pulls the latest before launching; fall back to
+                # main.py only if the launcher is missing.
+                exec_line = (f"Exec={nix_launcher}" if nix_launcher.exists()
+                             else f"Exec={python} {script}")
                 desk = desktop / "J.A.R.V.I.S.desktop"
                 desk.write_text(
                     "[Desktop Entry]\n"
                     "Name=J.A.R.V.I.S\n"
-                    f"Exec={python} {script}\n"
-                    f"Path={script.parent}\n"
+                    f"{exec_line}\n"
+                    f"Path={root}\n"
                     "Type=Application\n"
                     "Terminal=false\n"
                     "Categories=Utility;\n"
