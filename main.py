@@ -53,6 +53,7 @@ from actions.power_control      import power_control
 from actions.delta_market       import delta_market
 from actions.skills             import skills as skills_action
 from actions.recall             import recall as recall_action, journal as _journal
+from actions.background         import background as background_action, start_job
 from actions.web_search        import web_search as web_search_action
 from actions.computer_control  import computer_control
 from actions.game_updater      import game_updater
@@ -242,6 +243,25 @@ TOOL_DECLARATIONS = [
                 "description": {"type": "STRING", "description": "One-line summary of the skill (save)"},
                 "content":     {"type": "STRING", "description": "The reusable step-by-step instructions (save)"},
                 "tags":        {"type": "STRING", "description": "Comma-separated keywords (save)"},
+            },
+            "required": []
+        }
+    },
+    {
+        "name": "background",
+        "description": (
+            "Manage work JARVIS is doing in the background. Long tasks (agent_mode) run on a "
+            "background thread so JARVIS keeps listening instead of going silent — he reports "
+            "when they finish, and waits for a gap in your typing before speaking. Use this to "
+            "check on them: action='list' for what's running, 'status'/'result' for one job "
+            "(job_id), 'cancel' to stop one, 'wait' to block until a job finishes."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action":  {"type": "STRING", "description": "list (default) | status | result | cancel | wait"},
+                "job_id":  {"type": "STRING", "description": "Short job id, e.g. 'a3f9'"},
+                "timeout": {"type": "NUMBER", "description": "Seconds to wait (wait action)"},
             },
             "required": []
         }
@@ -854,7 +874,24 @@ class JarvisLive:
                 result = r or "Done."
 
             elif name == "agent_mode":
-                r = await loop.run_in_executor(None, lambda: agent_mode(parameters=args, player=self.ui, speak=self.speak))
+                # agent_mode can run for minutes (up to 18 tool rounds). Awaiting it
+                # would make JARVIS deaf for the whole time. Default to running it in
+                # the background so he keeps listening; pass background=false to wait.
+                if str(args.get("background", "true")).lower() not in ("false", "0", "no"):
+                    task_label = str(args.get("task") or args.get("goal") or "agent task")[:60]
+                    job = start_job(
+                        f"agent_mode: {task_label}",
+                        lambda: agent_mode(parameters=args, player=self.ui, speak=None),
+                        player=self.ui, speak=self.speak,
+                    )
+                    result = (f"Started in the background as job {job.id}. I'll tell you when "
+                              f"it's done — you can keep talking to me meanwhile.")
+                else:
+                    r = await loop.run_in_executor(None, lambda: agent_mode(parameters=args, player=self.ui, speak=self.speak))
+                    result = r or "Done."
+
+            elif name == "background":
+                r = await loop.run_in_executor(None, lambda: background_action(parameters=args, player=self.ui, speak=self.speak))
                 result = r or "Done."
 
             elif name == "cast_spell":

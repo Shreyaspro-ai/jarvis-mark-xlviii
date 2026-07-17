@@ -920,6 +920,12 @@ class _CameraPreview(QWidget):
             self._img_lbl.setPixmap(scaled)
             self._img_lbl.setFixedSize(scaled.width(), scaled.height())
             self.adjustSize()
+        # Show WITHOUT stealing focus — the user may be typing. raise_() lifts the
+        # popup visually; activateWindow() is deliberately NOT called.
+        try:
+            self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, True)
+        except Exception:
+            pass
         self.show()
         self.raise_()
         self._timer.start(6_000)   # auto-dismiss after 6 s

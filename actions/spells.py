@@ -33,11 +33,26 @@ _SYSTEM = platform.system()
 
 
 # ── low-level helpers used by the new spells ──────────────────────────────
+try:
+    from core.focus import preserve_focus
+except Exception:                       # focus helper optional / non-Windows
+    from contextlib import contextmanager
+
+    @contextmanager
+    def preserve_focus():
+        yield None
+
+
 def _hotkey(*keys) -> bool:
-    """Send a key combo. Tries pyautogui, then Windows SendKeys fallback."""
+    """Send a key combo. Tries pyautogui, then Windows SendKeys fallback.
+
+    Wrapped in preserve_focus() so the keystrokes don't land in — and the focus
+    isn't stolen from — whatever the user is currently typing in.
+    """
     try:
         import pyautogui
-        pyautogui.hotkey(*keys)
+        with preserve_focus():
+            pyautogui.hotkey(*keys)
         return True
     except Exception:
         pass
