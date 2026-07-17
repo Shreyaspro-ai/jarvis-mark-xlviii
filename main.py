@@ -56,6 +56,7 @@ from actions.recall             import recall as recall_action, journal as _jour
 from actions.background         import background as background_action, start_job
 from actions.web_tools          import web_tools as web_tools_action
 from actions.paperclip          import paperclip as paperclip_action
+from actions.whatsapp           import whatsapp as whatsapp_action
 from actions.web_search        import web_search as web_search_action
 from actions.computer_control  import computer_control
 from actions.game_updater      import game_updater
@@ -245,6 +246,30 @@ TOOL_DECLARATIONS = [
                 "description": {"type": "STRING", "description": "One-line summary of the skill (save)"},
                 "content":     {"type": "STRING", "description": "The reusable step-by-step instructions (save)"},
                 "tags":        {"type": "STRING", "description": "Comma-separated keywords (save)"},
+            },
+            "required": []
+        }
+    },
+    {
+        "name": "whatsapp",
+        "description": (
+            "Send WhatsApp messages and look up contacts, by reading WhatsApp Web's actual "
+            "contact list. USE THIS for anything WhatsApp — it is far safer than send_message, "
+            "which types blind and can message the wrong person. It matches the name exactly "
+            "first; with no exact match it picks the closest and tells the user what it did; "
+            "if nothing is close enough it refuses and asks. It also verifies the opened chat "
+            "really is that contact before typing, and it types into the page rather than the "
+            "keyboard, so it never interrupts what the user is doing. "
+            "action='send' (contact + message), 'find' (show every match and how close each is), "
+            "'contacts' (list visible chats), 'status'. First use needs a one-time QR scan."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action":    {"type": "STRING", "description": "send (default) | find | contacts | status"},
+                "contact":   {"type": "STRING", "description": "Contact/chat name, e.g. 'srinivas 2'"},
+                "message":   {"type": "STRING", "description": "The message text (send)"},
+                "threshold": {"type": "NUMBER", "description": "Min similarity 0-1 to accept a non-exact match (default 0.55)"},
             },
             "required": []
         }
@@ -968,6 +993,10 @@ class JarvisLive:
 
             elif name == "background":
                 r = await loop.run_in_executor(None, lambda: background_action(parameters=args, player=self.ui, speak=self.speak))
+                result = r or "Done."
+
+            elif name == "whatsapp":
+                r = await loop.run_in_executor(None, lambda: whatsapp_action(parameters=args, player=self.ui, speak=self.speak))
                 result = r or "Done."
 
             elif name == "self_update":
