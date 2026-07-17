@@ -82,6 +82,7 @@ def ensure_ollama_running(timeout: int = 15) -> bool:
         except Exception as e:
             print(
                 f"[LLM] Cannot reach OpenAI-compatible server at {url}.\n"
+                f"      {type(e).__name__}: {e}\n"
                 "      Make sure LM Studio / LocalAI / Jan is running and the server is started."
             )
             return False

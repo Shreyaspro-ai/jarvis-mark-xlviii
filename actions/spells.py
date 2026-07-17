@@ -154,8 +154,9 @@ def _target_process_names(target: str) -> list[str]:
     for c in candidates:
         if not c:
             continue
-        base = c.split()[0] if " " in c else c   # "Google Chrome" -> "Google" is bad;
-        # prefer the normalized single token, then whole string without spaces
+        # Deliberately NOT splitting on spaces: "Google Chrome" -> "Google"
+        # would match the wrong process. Use the whole string, and the
+        # space-stripped form ("GoogleChrome"), instead.
         names.add(c)
         names.add(c.replace(" ", ""))
         if not c.lower().endswith(".exe") and _SYSTEM == "Windows":

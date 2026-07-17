@@ -15,7 +15,6 @@ Actions: status | doctor | onboard | company | goal | agent | run | cost
 """
 from __future__ import annotations
 
-import json
 import shutil
 import subprocess
 import sys
