@@ -30,3 +30,6 @@ tools/.venv-web/
 tools/node_modules/
 tools/package-lock.json
 memory/web/
+
+# WhatsApp Web login session - NEVER commit
+memory/whatsapp-profile/
