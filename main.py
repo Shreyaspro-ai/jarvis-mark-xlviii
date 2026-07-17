@@ -55,6 +55,7 @@ from actions.skills             import skills as skills_action
 from actions.recall             import recall as recall_action, journal as _journal
 from actions.background         import background as background_action, start_job
 from actions.web_tools          import web_tools as web_tools_action
+from actions.paperclip          import paperclip as paperclip_action
 from actions.web_search        import web_search as web_search_action
 from actions.computer_control  import computer_control
 from actions.game_updater      import game_updater
@@ -244,6 +245,29 @@ TOOL_DECLARATIONS = [
                 "description": {"type": "STRING", "description": "One-line summary of the skill (save)"},
                 "content":     {"type": "STRING", "description": "The reusable step-by-step instructions (save)"},
                 "tags":        {"type": "STRING", "description": "Comma-separated keywords (save)"},
+            },
+            "required": []
+        }
+    },
+    {
+        "name": "paperclip",
+        "description": (
+            "Paperclip — orchestrate a TEAM of AI agents against business goals, with org "
+            "charts, budgets, governance and cost tracking (self-hosted, github.com/paperclipai/"
+            "paperclip). Use this when the user wants a whole project or business goal run by "
+            "multiple agents over time — 'hire a team', 'run this as a company', 'what are my "
+            "agents doing', 'what has this cost me'. For a single one-off task on this computer, "
+            "use agent_mode instead: agent_mode is one worker, paperclip is the whole company. "
+            "action='status' checks it's installed and healthy; 'onboard' does one-time setup "
+            "(runs in the background); then company/goal/agent/project/issue/run/cost/activity/"
+            "approval/dashboard each default to listing. action='raw' with args passes any "
+            "command straight through, e.g. args='agent list'."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {"type": "STRING", "description": "status (default) | doctor | onboard | company | goal | agent | project | issue | run | cost | activity | approval | dashboard | raw"},
+                "args":   {"type": "STRING", "description": "Extra CLI args, e.g. 'list' or 'create --name X'. With action='raw' this is the whole command."},
             },
             "required": []
         }
@@ -928,6 +952,22 @@ class JarvisLive:
             elif name == "background":
                 r = await loop.run_in_executor(None, lambda: background_action(parameters=args, player=self.ui, speak=self.speak))
                 result = r or "Done."
+
+            elif name == "paperclip":
+                # onboard/run spin up a server and take minutes — background them.
+                _slow = {"onboard", "run"}
+                _act  = str(args.get("action") or "status").lower()
+                if _act in _slow and str(args.get("background", "true")).lower() not in ("false", "0", "no"):
+                    job = start_job(
+                        f"paperclip: {_act}",
+                        lambda: paperclip_action(parameters=args, player=self.ui, speak=None),
+                        player=self.ui, speak=self.speak,
+                    )
+                    result = (f"Started paperclip {_act} in the background as job {job.id}. "
+                              f"I'll tell you when it's done.")
+                else:
+                    r = await loop.run_in_executor(None, lambda: paperclip_action(parameters=args, player=self.ui, speak=self.speak))
+                    result = r or "Done."
 
             elif name == "web_tools":
                 # Archiving/mirroring/crawling can take minutes — run in the background

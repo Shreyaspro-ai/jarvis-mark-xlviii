@@ -46,10 +46,10 @@ echo "==> Installing Python dependencies (this takes a few minutes)..."
 # shells out to — deliberately NOT installed into the main venv, because
 # mitmproxy pins typing-extensions<=4.14 while pydantic (google-genai) needs
 # >=4.14.1. Keeping them apart avoids an unresolvable conflict.
-echo "==> Installing web tools (SingleFile, Prettier, js-beautify)..."
+echo "==> Installing web tools (SingleFile, Prettier, js-beautify) + Paperclip CLI..."
 if command -v npm >/dev/null 2>&1; then
-  npm install -g single-file-cli prettier js-beautify 2>/dev/null \
-    || echo "!! global npm install failed — try: sudo npm i -g single-file-cli prettier js-beautify"
+  npm install -g single-file-cli prettier js-beautify paperclipai 2>/dev/null \
+    || echo "!! global npm install failed — try: sudo npm i -g single-file-cli prettier js-beautify paperclipai"
   if [ -f tools/package.json ]; then
     (cd tools && npm install --silent 2>/dev/null) \
       || echo "!! tools/npm install failed (website-scraper, javascript-obfuscator)"
