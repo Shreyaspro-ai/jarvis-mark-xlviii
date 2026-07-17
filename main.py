@@ -250,6 +250,23 @@ TOOL_DECLARATIONS = [
         }
     },
     {
+        "name": "self_update",
+        "description": (
+            "Check GitHub for new versions of JARVIS himself and pull them. Use when the user "
+            "asks 'are you up to date', 'any updates', 'update yourself', 'what's new'. "
+            "action='check' (default) reports what's waiting; action='apply' fast-forwards to "
+            "the latest. Updates take effect on the NEXT restart — the running process keeps "
+            "the old code, so say so. Refuses to overwrite local edits to tracked files."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action": {"type": "STRING", "description": "check (default) | apply"},
+            },
+            "required": []
+        }
+    },
+    {
         "name": "paperclip",
         "description": (
             "Paperclip — orchestrate a TEAM of AI agents against business goals, with org "
@@ -953,6 +970,23 @@ class JarvisLive:
                 r = await loop.run_in_executor(None, lambda: background_action(parameters=args, player=self.ui, speak=self.speak))
                 result = r or "Done."
 
+            elif name == "self_update":
+                def _do_update():
+                    from core.updater import check_for_updates, apply_update
+                    act = str(args.get("action") or "check").lower()
+                    if act == "apply":
+                        return apply_update()["message"]
+                    info = check_for_updates()
+                    if not info["ok"]:
+                        return f"Couldn't check for updates: {info['reason']}"
+                    if info["behind"] == 0:
+                        return "I'm on the latest version."
+                    lines = "\n".join(f"  {c}" for c in info["commits"][:5])
+                    return (f"{info['behind']} update(s) waiting on GitHub:\n{lines}\n"
+                            f"Say 'apply' and I'll pull them — they take effect when you restart me.")
+                r = await loop.run_in_executor(None, _do_update)
+                result = r or "Done."
+
             elif name == "paperclip":
                 # onboard/run spin up a server and take minutes — background them.
                 _slow = {"onboard", "run"}
@@ -1433,6 +1467,19 @@ class JarvisLive:
 
     async def run(self):
         self._loop = asyncio.get_event_loop()
+
+        # Self-update check, independent of how JARVIS was launched. The launcher
+        # scripts pull before starting, but a Start Menu shortcut / .desktop file /
+        # `python main.py` all bypass them and the clone silently rots. This runs on
+        # a background thread so it never delays startup, and it only speaks when
+        # the user is idle. New code takes effect on the next restart.
+        try:
+            from core.updater import startup_check
+            start_job("check for updates",
+                      lambda: startup_check(player=self.ui, speak=self.speak),
+                      player=None, speak=None)
+        except Exception as e:
+            print(f"[Updater] Skipped: {e}")
 
         # Start dashboard (optional — needs: pip install fastapi "uvicorn[standard]" cryptography)
         try:
