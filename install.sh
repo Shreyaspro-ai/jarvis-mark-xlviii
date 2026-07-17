@@ -41,7 +41,33 @@ echo "==> Installing Python dependencies (this takes a few minutes)..."
 # Not in requirements.txt upstream, but JARVIS needs both:
 "$PY" -m pip install -q PyQt6 truststore || echo "!! PyQt6/truststore install failed"
 
-# ---- 3. API key ---------------------------------------------------------
+# ---- 3. Web tooling -----------------------------------------------------
+# Archiving/mirroring/crawling/traffic tools. These are CLI programs JARVIS
+# shells out to — deliberately NOT installed into the main venv, because
+# mitmproxy pins typing-extensions<=4.14 while pydantic (google-genai) needs
+# >=4.14.1. Keeping them apart avoids an unresolvable conflict.
+echo "==> Installing web tools (SingleFile, Prettier, js-beautify)..."
+if command -v npm >/dev/null 2>&1; then
+  npm install -g single-file-cli prettier js-beautify 2>/dev/null \
+    || echo "!! global npm install failed — try: sudo npm i -g single-file-cli prettier js-beautify"
+  if [ -f tools/package.json ]; then
+    (cd tools && npm install --silent 2>/dev/null) \
+      || echo "!! tools/npm install failed (website-scraper, javascript-obfuscator)"
+  fi
+else
+  echo "!! npm not found — skipping SingleFile/Prettier/js-beautify. Install Node.js and re-run."
+fi
+
+echo "==> Installing Scrapy + mitmproxy in an isolated venv..."
+if "$PY" -m venv tools/.venv-web >/dev/null 2>&1; then
+  tools/.venv-web/bin/python -m pip install -q --upgrade pip >/dev/null 2>&1
+  tools/.venv-web/bin/python -m pip install -q scrapy mitmproxy mitmproxy2swagger \
+    || echo "!! web venv install failed — run it by hand if you need crawl/intercept"
+else
+  echo "!! could not create tools/.venv-web"
+fi
+
+# ---- 4. API key ---------------------------------------------------------
 if [ ! -f config/api_keys.json ]; then
   cp config/api_keys.example.json config/api_keys.json
   echo

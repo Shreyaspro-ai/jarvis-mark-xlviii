@@ -54,6 +54,7 @@ from actions.delta_market       import delta_market
 from actions.skills             import skills as skills_action
 from actions.recall             import recall as recall_action, journal as _journal
 from actions.background         import background as background_action, start_job
+from actions.web_tools          import web_tools as web_tools_action
 from actions.web_search        import web_search as web_search_action
 from actions.computer_control  import computer_control
 from actions.game_updater      import game_updater
@@ -243,6 +244,40 @@ TOOL_DECLARATIONS = [
                 "description": {"type": "STRING", "description": "One-line summary of the skill (save)"},
                 "content":     {"type": "STRING", "description": "The reusable step-by-step instructions (save)"},
                 "tags":        {"type": "STRING", "description": "Comma-separated keywords (save)"},
+            },
+            "required": []
+        }
+    },
+    {
+        "name": "web_tools",
+        "description": (
+            "Archive, mirror and analyse web pages using industry-standard open-source tools. "
+            "action='archive' saves a page as ONE self-contained HTML file with all CSS/images/fonts "
+            "inlined (SingleFile) — best for 'save this page', 'keep this offline'. "
+            "action='mirror' downloads a whole site's front end and rewrites links so it browses "
+            "offline (node-website-scraper; depth, max). action='crawl' walks a site and extracts "
+            "structured data — titles, headings, links (Scrapy; obeys robots.txt). "
+            "action='firecrawl' turns a dynamic page into clean markdown (needs an API key). "
+            "action='intercept' records HTTP/S traffic through a local proxy for debugging "
+            "(mitmproxy; port, seconds) and 'to_openapi' turns that capture into an OpenAPI spec. "
+            "action='beautify' unpacks minified JavaScript into readable code (js-beautify); "
+            "'format' tidies a file with Prettier; 'obfuscate' minifies/obfuscates JS. "
+            "action='status' lists which tools are installed. "
+            "Long actions run in the background automatically and report when finished."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "action":   {"type": "STRING", "description": "archive | mirror | crawl | firecrawl | intercept | to_openapi | beautify | format | obfuscate | status"},
+                "url":      {"type": "STRING", "description": "Page/site URL (archive, mirror, crawl, firecrawl)"},
+                "path":     {"type": "STRING", "description": "Local file path (beautify, format, obfuscate, to_openapi)"},
+                "out":      {"type": "STRING", "description": "Where to write the output (optional)"},
+                "depth":    {"type": "NUMBER", "description": "Link depth to follow when mirroring (default 1)"},
+                "max":      {"type": "NUMBER", "description": "Max resources/pages (default 200 mirror, 50 crawl)"},
+                "port":     {"type": "NUMBER", "description": "Proxy port for intercept (default 8080)"},
+                "seconds":  {"type": "NUMBER", "description": "How long to capture traffic (default 30)"},
+                "base_url": {"type": "STRING", "description": "Base URL when building an OpenAPI spec"},
+                "mode":     {"type": "STRING", "description": "firecrawl: scrape (default) | crawl"},
             },
             "required": []
         }
@@ -893,6 +928,24 @@ class JarvisLive:
             elif name == "background":
                 r = await loop.run_in_executor(None, lambda: background_action(parameters=args, player=self.ui, speak=self.speak))
                 result = r or "Done."
+
+            elif name == "web_tools":
+                # Archiving/mirroring/crawling can take minutes — run in the background
+                # by default so JARVIS keeps listening. status/format/beautify are fast.
+                _fast = {"status", "format", "beautify", "obfuscate", "to_openapi"}
+                _act  = str(args.get("action") or "archive").lower()
+                if _act in _fast or str(args.get("background", "true")).lower() in ("false", "0", "no"):
+                    r = await loop.run_in_executor(None, lambda: web_tools_action(parameters=args, player=self.ui, speak=self.speak))
+                    result = r or "Done."
+                else:
+                    _label = f"{_act} {args.get('url') or args.get('path') or ''}".strip()[:60]
+                    job = start_job(
+                        f"web_tools: {_label}",
+                        lambda: web_tools_action(parameters=args, player=self.ui, speak=None),
+                        player=self.ui, speak=self.speak,
+                    )
+                    result = (f"Started '{_act}' in the background as job {job.id}. "
+                              f"I'll tell you when it's done.")
 
             elif name == "cast_spell":
                 r = await loop.run_in_executor(None, lambda: cast_spell(parameters=args, player=self.ui, speak=self.speak))

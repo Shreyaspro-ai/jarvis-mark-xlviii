@@ -24,3 +24,9 @@ __pycache__/
 # self-improving learning loop (personal, never upload)
 memory/skills.json
 memory/history.db
+
+# web tooling (installed by install.sh, not committed)
+tools/.venv-web/
+tools/node_modules/
+tools/package-lock.json
+memory/web/
