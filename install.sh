@@ -1,16 +1,44 @@
 #!/usr/bin/env bash
-# One-time JARVIS setup on Linux. After this, ./start-jarvis.sh keeps itself updated.
+# One-time JARVIS setup for Linux and macOS.
+# (Windows: run install.ps1 instead.)
+# After this, ./start-jarvis.sh keeps itself updated from GitHub on every launch.
 set -uo pipefail
-cd "$(dirname "$(readlink -f "$0")")"
+
+# readlink -f doesn't exist on stock macOS; resolve the script dir portably.
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+cd "$(cd -P "$(dirname "$SOURCE")" && pwd)"
 
 VENV=".venv"
 PY="$VENV/bin/python"
 
-echo "==> JARVIS (MARK XLVIII) - Linux setup"
+case "$(uname -s)" in
+  Darwin) OS="macOS" ;;
+  Linux)  OS="Linux" ;;
+  *)      OS="$(uname -s)" ;;
+esac
+echo "==> JARVIS (MARK XLVIII) - $OS setup"
 
 # ---- 1. System libraries -------------------------------------------------
-# PyQt6 needs X11/GL libs, sounddevice needs PortAudio, pyautogui needs scrot/tk.
-if command -v apt-get >/dev/null 2>&1; then
+# PyQt6 needs X11/GL libs (Linux), sounddevice needs PortAudio, pyautogui needs
+# scrot/tk on Linux and Accessibility permission on macOS.
+if [ "$OS" = "macOS" ]; then
+  if command -v brew >/dev/null 2>&1; then
+    echo "==> Installing system libraries via Homebrew..."
+    brew install portaudio git node python-tk 2>/dev/null \
+      || echo "!! Some brew packages failed - JARVIS may still work. Continuing."
+  else
+    echo "!! Homebrew not found. Install it from https://brew.sh then re-run,"
+    echo "   or install manually: portaudio, git, node, python-tk."
+  fi
+  echo "   NOTE: macOS will ask for Accessibility + Microphone + Screen Recording"
+  echo "   permission the first time JARVIS controls the desktop or listens."
+  echo "   System Settings > Privacy & Security > grant them to your terminal."
+elif command -v apt-get >/dev/null 2>&1; then
   echo "==> Installing system libraries (needs sudo)..."
   sudo apt-get update -qq
   sudo apt-get install -y -qq \

@@ -3,7 +3,14 @@
 #   ./start-jarvis.sh              normal (auto-update, then run)
 #   ./start-jarvis.sh --no-update  skip the update check
 set -uo pipefail
-cd "$(dirname "$(readlink -f "$0")")"
+# Resolve this script's directory portably (macOS has no `readlink -f`).
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+cd "$(cd -P "$(dirname "$SOURCE")" && pwd)"
 
 VENV=".venv"
 PY="$VENV/bin/python"

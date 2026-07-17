@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 # Pull the latest JARVIS and install anything new. Safe to run anytime.
 set -uo pipefail
-cd "$(dirname "$(readlink -f "$0")")"
+# Resolve this script's directory portably (macOS has no `readlink -f`).
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+cd "$(cd -P "$(dirname "$SOURCE")" && pwd)"
 
 VENV=".venv"
 PY="$VENV/bin/python"
